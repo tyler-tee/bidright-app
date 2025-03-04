@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 
 // Component for Analytics
 const AnalyticsManager = ({ children }) => {

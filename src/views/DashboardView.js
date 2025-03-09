@@ -1,5 +1,5 @@
 // src/views/DashboardView.js
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 const DashboardView = ({ setView, trackEvent, savedEstimates }) => {

@@ -1,5 +1,5 @@
 // src/components/auth/Login.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const Login = ({ setView, trackEvent }) => {
@@ -9,7 +9,32 @@ const Login = ({ setView, trackEvent }) => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   
-  const { login, signInWithGoogle } = useAuth();
+  const { login, signInWithGoogle, currentUser } = useAuth();
+  
+  // Check if user is already logged in and redirect if needed
+  useEffect(() => {
+    if (currentUser) {
+      console.log('User already logged in, redirecting to dashboard');
+      handleSuccessfulLogin();
+    }
+  }, [currentUser]);
+  
+  // Central function to handle successful login
+  const handleSuccessfulLogin = () => {
+    setSuccess(true);
+    setLoading(false);
+    
+    setTimeout(() => {
+      // Check if there's a redirect path stored
+      const redirectPath = localStorage.getItem('redirectAfterLogin');
+      if (redirectPath) {
+        localStorage.removeItem('redirectAfterLogin');
+        setView(redirectPath);
+      } else {
+        setView('dashboard');
+      }
+    }, 1000);
+  };
   
   async function handleSubmit(e) {
     e.preventDefault();
@@ -21,19 +46,7 @@ const Login = ({ setView, trackEvent }) => {
       await login(email, password);
       trackEvent('user_login', { method: 'email' });
       
-      // Set success and redirect
-      setSuccess(true);
-      setTimeout(() => {
-        // Check if there's a redirect path stored
-        const redirectPath = localStorage.getItem('redirectAfterLogin');
-        if (redirectPath) {
-          localStorage.removeItem('redirectAfterLogin');
-          setView(redirectPath);
-        } else {
-          setView('dashboard');
-        }
-      }, 1000);
-      
+      handleSuccessfulLogin();
     } catch (error) {
       setSuccess(false);
       setError(
@@ -56,19 +69,8 @@ const Login = ({ setView, trackEvent }) => {
       await signInWithGoogle();
       trackEvent('user_login', { method: 'google' });
       
-      // Set success and redirect
-      setSuccess(true);
-      setTimeout(() => {
-        // Check if there's a redirect path stored
-        const redirectPath = localStorage.getItem('redirectAfterLogin');
-        if (redirectPath) {
-          localStorage.removeItem('redirectAfterLogin');
-          setView(redirectPath);
-        } else {
-          setView('dashboard');
-        }
-      }, 1000);
-      
+      // Note: We don't need to call handleSuccessfulLogin here because the 
+      // useEffect hook will detect the currentUser change and handle it
     } catch (error) {
       setSuccess(false);
       setError('Failed to sign in with Google. Please try again.');

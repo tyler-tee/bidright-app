@@ -1,4 +1,6 @@
+// src/App.js
 import React, { useState, useEffect, useRef } from 'react';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import AnalyticsManager from './components/AnalyticsManager';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -6,14 +8,23 @@ import FeedbackButton from './components/FeedbackButton';
 import CookieBanner from './components/CookieBanner';
 import Modal from './components/Modal';
 import WelcomeGuide from './components/WelcomeGuide';
+
+// Views
 import HomeView from './views/HomeView';
 import EstimatorView from './views/EstimatorView';
 import ResultView from './views/ResultView';
 import SavedEstimatesView from './views/SavedEstimatesView';
 import TermsView from './views/TermsView';
 import PrivacyView from './views/PrivacyView';
+import DashboardView from './views/DashboardView';
 
-function App() {
+// Auth Components
+import Login from './components/auth/Login';
+import Signup from './components/auth/Signup';
+import ResetPassword from './components/auth/ResetPassword';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+
+function AppContent() {
   const [view, setView] = useState('home');
   const [industry, setIndustry] = useState('');
   const [projectType, setProjectType] = useState('');
@@ -29,6 +40,9 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  // Get auth context
+  const { currentUser, userDetails } = useAuth();
   
   // Text estimate summary ref for copying
   const textSummaryRef = useRef(null);
@@ -92,15 +106,35 @@ function App() {
         console.error("Error loading saved estimates:", error);
       }
     }
-  }, []);
+    
+    // Check for redirect after login
+    const redirectView = localStorage.getItem('redirectAfterLogin');
+    if (redirectView && currentUser) {
+      setView(redirectView);
+      localStorage.removeItem('redirectAfterLogin');
+    }
+  }, [currentUser]);
 
   // Handle account-related button clicks
   const handleAccountAction = (action) => {
-    setModalContent({
-      title: 'Coming Soon',
-      message: `${action} functionality will be available soon! Enter your email to be notified when this feature launches.`
-    });
-    setShowModal(true);
+    if (action === 'Login') {
+      setView('login');
+    } else if (action === 'Sign Up') {
+      setView('signup');
+    } else if (action === 'Premium upgrade') {
+      if (currentUser) {
+        setView('subscription');
+      } else {
+        localStorage.setItem('redirectAfterLogin', 'subscription');
+        setView('login');
+      }
+    } else {
+      setModalContent({
+        title: 'Coming Soon',
+        message: `${action} functionality will be available soon! Enter your email to be notified when this feature launches.`
+      });
+      setShowModal(true);
+    }
   };
   
   // Handle email subscription
@@ -128,8 +162,132 @@ function App() {
     }, 1000);
   };
   
-  // Here we're passing shared state and functions to each component
-  // This keeps our App.js clean while allowing components to interact with the app state
+  // Determine which view to render based on auth status
+  const renderView = () => {
+    // Views that don't need protection
+    if (view === 'home') {
+      return <HomeView setView={setView} setMobileMenuOpen={setMobileMenuOpen} savedEstimates={savedEstimates} trackEvent={trackEvent} />;
+    }
+    
+    if (view === 'terms') {
+      return <TermsView setView={setView} setMobileMenuOpen={setMobileMenuOpen} />;
+    }
+    
+    if (view === 'privacy') {
+      return <PrivacyView setView={setView} setMobileMenuOpen={setMobileMenuOpen} />;
+    }
+    
+    if (view === 'login') {
+      return <Login setView={setView} trackEvent={trackEvent} />;
+    }
+    
+    if (view === 'signup') {
+      return <Signup setView={setView} trackEvent={trackEvent} />;
+    }
+    
+    if (view === 'resetPassword') {
+      return <ResetPassword setView={setView} trackEvent={trackEvent} />;
+    }
+    
+    // Views that need conditional protection
+    if (view === 'dashboard') {
+      return (
+        <ProtectedRoute
+          setView={setView}
+          currentView={view}
+          component={DashboardView}
+          componentProps={{
+            setView,
+            trackEvent,
+            savedEstimates,
+          }}
+        />
+      );
+    }
+    
+    if (view === 'saved') {
+      // Protected route if user is logged in, otherwise show login
+      return currentUser ? (
+        <SavedEstimatesView 
+          savedEstimates={savedEstimates} 
+          setSavedEstimates={setSavedEstimates} 
+          setView={setView}
+          setMobileMenuOpen={setMobileMenuOpen}
+        />
+      ) : (
+        <ProtectedRoute
+          setView={setView}
+          currentView={view}
+          component={SavedEstimatesView}
+          componentProps={{
+            savedEstimates,
+            setSavedEstimates,
+            setView,
+            setMobileMenuOpen
+          }}
+        />
+      );
+    }
+    
+    // Default views - these can be used by both logged in and anonymous users
+    if (view === 'estimator') {
+      return (
+        <EstimatorView 
+          industry={industry}
+          setIndustry={setIndustry}
+          projectType={projectType}
+          setProjectType={setProjectType}
+          complexity={complexity}
+          setComplexity={setComplexity}
+          features={features}
+          setFeatures={setFeatures}
+          setEstimate={setEstimate}
+          setView={setView}
+          setShowPremiumPrompt={setShowPremiumPrompt}
+          isLoading={isLoading}
+          setIsLoading={setIsLoading}
+          error={error}
+          setError={setError}
+          trackEvent={trackEvent}
+        />
+      );
+    }
+    
+    if (view === 'result') {
+      return (
+        <ResultView 
+          estimate={estimate}
+          industry={industry}
+          projectType={projectType}
+          complexity={complexity}
+          features={features}
+          showPremiumPrompt={showPremiumPrompt && !userDetails?.isSubscribed}
+          setView={setView}
+          email={email}
+          setEmail={setEmail}
+          emailSubmitted={emailSubmitted}
+          handleSubscribe={handleSubscribe}
+          isLoading={isLoading}
+          setIsLoading={setIsLoading}
+          error={error}
+          textSummaryRef={textSummaryRef}
+          savedEstimates={savedEstimates}
+          setSavedEstimates={setSavedEstimates}
+          setModalContent={setModalContent}
+          setShowModal={setShowModal}
+          trackEvent={trackEvent}
+          handleAccountAction={handleAccountAction}
+          setMobileMenuOpen={setMobileMenuOpen}
+          isLoggedIn={!!currentUser}
+          isPremium={userDetails?.isSubscribed}
+        />
+      );
+    }
+    
+    // Default to home if view not found
+    return <HomeView setView={setView} setMobileMenuOpen={setMobileMenuOpen} savedEstimates={savedEstimates} trackEvent={trackEvent} />;
+  };
+  
   return (
     <AnalyticsManager>
       <div className="min-h-screen bg-gray-50" role="application" aria-label="BidRight freelance estimation application">
@@ -141,66 +299,12 @@ function App() {
           savedEstimates={savedEstimates}
           handleAccountAction={handleAccountAction}
           trackEvent={trackEvent}
+          isLoggedIn={!!currentUser}
+          userName={currentUser?.displayName}
         />
         
         <main className="py-8" role="main">
-          {view === 'home' && <HomeView setView={setView} setMobileMenuOpen={setMobileMenuOpen} savedEstimates={savedEstimates} trackEvent={trackEvent} />}
-          {view === 'estimator' && (
-            <EstimatorView 
-              industry={industry}
-              setIndustry={setIndustry}
-              projectType={projectType}
-              setProjectType={setProjectType}
-              complexity={complexity}
-              setComplexity={setComplexity}
-              features={features}
-              setFeatures={setFeatures}
-              setEstimate={setEstimate}
-              setView={setView}
-              setShowPremiumPrompt={setShowPremiumPrompt}
-              isLoading={isLoading}
-              setIsLoading={setIsLoading}
-              error={error}
-              setError={setError}
-              trackEvent={trackEvent}
-            />
-          )}
-          {view === 'result' && (
-            <ResultView 
-              estimate={estimate}
-              industry={industry}
-              projectType={projectType}
-              complexity={complexity}
-              features={features}
-              showPremiumPrompt={showPremiumPrompt}
-              setView={setView}
-              email={email}
-              setEmail={setEmail}
-              emailSubmitted={emailSubmitted}
-              handleSubscribe={handleSubscribe}
-              isLoading={isLoading}
-              setIsLoading={setIsLoading}
-              error={error}
-              textSummaryRef={textSummaryRef}
-              savedEstimates={savedEstimates}
-              setSavedEstimates={setSavedEstimates}
-              setModalContent={setModalContent}
-              setShowModal={setShowModal}
-              trackEvent={trackEvent}
-              handleAccountAction={handleAccountAction}
-              setMobileMenuOpen={setMobileMenuOpen}
-            />
-          )}
-          {view === 'saved' && (
-            <SavedEstimatesView 
-              savedEstimates={savedEstimates} 
-              setSavedEstimates={setSavedEstimates} 
-              setView={setView}
-              setMobileMenuOpen={setMobileMenuOpen}
-            />
-          )}
-          {view === 'terms' && <TermsView setView={setView} setMobileMenuOpen={setMobileMenuOpen} />}
-          {view === 'privacy' && <PrivacyView setView={setView} setMobileMenuOpen={setMobileMenuOpen} />}
+          {renderView()}
         </main>
         
         <Footer setView={setView} setMobileMenuOpen={setMobileMenuOpen} />
@@ -225,6 +329,14 @@ function App() {
         <WelcomeGuide view={view} trackEvent={trackEvent} />
       </div>
     </AnalyticsManager>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

@@ -160,8 +160,8 @@ const SubscriptionView = ({ setView, trackEvent }) => {
     {
       plan: 'pro',
       name: 'Pro',
-      price: 9.99,
-      annualPrice: 99,
+      price: 4.99,
+      annualPrice: 49.99,
       isPopular: true,
       features: [
         'All Free features',
@@ -169,16 +169,7 @@ const SubscriptionView = ({ setView, trackEvent }) => {
         'Detailed project breakdowns',
         'Risk assessment for project types',
         'PDF export with professional formatting',
-        'White-label estimates'
-      ]
-    },
-    {
-      plan: 'premium',
-      name: 'Premium',
-      price: 19.99,
-      annualPrice: 199,
-      features: [
-        'All Pro features',
+        'White-label estimates',
         'Competitor rate analysis',
         'Client management system',
         'Contract templates',
@@ -209,7 +200,7 @@ const SubscriptionView = ({ setView, trackEvent }) => {
             <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
               <div>
                 <h4 className="text-lg font-semibold">
-                  {currentPlan === 'premium' ? 'Premium Plan' : currentPlan === 'pro' ? 'Pro Plan' : 'Free Plan'}
+                  {currentPlan === 'pro' ? 'Pro Plan' : 'Free Plan'}
                 </h4>
                 
                 {subscriptionDetails.renewalDate && (
@@ -236,16 +227,6 @@ const SubscriptionView = ({ setView, trackEvent }) => {
                     className="text-red-600 hover:text-red-800 font-medium"
                   >
                     Cancel Subscription
-                  </button>
-                )}
-                
-                {currentPlan !== 'premium' && (
-                  <button
-                    onClick={() => handleSelectPlan('premium', isAnnual)}
-                    disabled={isLoading}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-                  >
-                    Upgrade to Premium
                   </button>
                 )}
               </div>
@@ -308,13 +289,13 @@ const SubscriptionView = ({ setView, trackEvent }) => {
           >
             Annual
             <span className="ml-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-              Save 20%
+              Save 16%
             </span>
           </button>
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-12">
         {plans.map((plan) => (
           <div 
             key={plan.plan}

@@ -18,21 +18,19 @@ export const hasFeatureAccess = (userDetails, feature) => {
     // Define which features are available in which plans
     const featureAccessMap = {
       // Basic features available in all plans
-      'basic_estimation': ['free', 'pro', 'premium'],
-      'save_estimates': ['free', 'pro', 'premium'],
+      'basic_estimation': ['free', 'pro'],
+      'save_estimates': ['free', 'pro'],
       
       // Pro features
-      'unlimited_estimates': ['pro', 'premium'],
-      'project_breakdown': ['pro', 'premium'],
-      'risk_assessment': ['pro', 'premium'],
-      'pdf_export': ['pro', 'premium'],
-      'white_label': ['pro', 'premium'],
-      
-      // Premium-only features
-      'competitor_rates': ['premium'],
-      'client_management': ['premium'],
-      'contract_templates': ['premium'],
-      'priority_support': ['premium'],
+      'unlimited_estimates': ['pro'],
+      'project_breakdown': ['pro'],
+      'risk_assessment': ['pro'],
+      'pdf_export': ['pro'],
+      'white_label': ['pro'],
+      'competitor_rates': ['pro'],
+      'client_management': ['pro'],
+      'contract_templates': ['pro'],
+      'priority_support': ['pro'],
     };
     
     // Check if the feature exists in the map and if user's plan has access
@@ -40,7 +38,7 @@ export const hasFeatureAccess = (userDetails, feature) => {
   };
   
   /**
-   * Check if user has access to premium features (Pro or Premium plan)
+   * Check if user has access to premium features (Pro plan)
    * @param {Object} userDetails - User details from AuthContext
    * @returns {boolean} - Whether user has premium access
    */
@@ -48,13 +46,13 @@ export const hasFeatureAccess = (userDetails, feature) => {
     if (!userDetails) return false;
     
     const userPlan = userDetails.plan || 'free';
-    return ['pro', 'premium'].includes(userPlan);
+    return userPlan === 'pro';
   };
   
   /**
    * Check if user has access to specific tier
    * @param {Object} userDetails - User details from AuthContext
-   * @param {string} tier - Tier to check ('free', 'pro', 'premium')
+   * @param {string} tier - Tier to check ('free', 'pro')
    * @returns {boolean} - Whether user has access to the tier
    */
   export const hasTierAccess = (userDetails, tier) => {
@@ -63,7 +61,7 @@ export const hasFeatureAccess = (userDetails, feature) => {
     const userPlan = userDetails.plan || 'free';
     
     // Define tier hierarchy
-    const tiers = ['free', 'pro', 'premium'];
+    const tiers = ['free', 'pro'];
     const userTierIndex = tiers.indexOf(userPlan);
     const requestedTierIndex = tiers.indexOf(tier);
     

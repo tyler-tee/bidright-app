@@ -88,8 +88,8 @@ const PricingView = ({ setView, trackEvent }) => {
     {
       plan: 'pro',
       name: 'Pro',
-      price: 9.99,
-      annualPrice: 99,
+      price: 4.99,
+      annualPrice: 49.99,
       isPopular: true,
       features: [
         'All Free features',
@@ -97,16 +97,7 @@ const PricingView = ({ setView, trackEvent }) => {
         'Detailed project breakdowns',
         'Risk assessment for project types',
         'PDF export with professional formatting',
-        'White-label estimates'
-      ]
-    },
-    {
-      plan: 'premium',
-      name: 'Premium',
-      price: 19.99,
-      annualPrice: 199,
-      features: [
-        'All Pro features',
+        'White-label estimates',
         'Competitor rate analysis',
         'Client management system',
         'Contract templates',
@@ -140,7 +131,7 @@ const PricingView = ({ setView, trackEvent }) => {
           >
             Annual
             <span className="ml-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-              Save 20%
+              Save 16%
             </span>
           </button>
         </div>
@@ -152,7 +143,7 @@ const PricingView = ({ setView, trackEvent }) => {
         </div>
       )}
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
         {plans.map((plan) => (
           <PlanCard
             key={plan.plan}

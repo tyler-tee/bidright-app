@@ -142,22 +142,22 @@ const DashboardView = ({ setView, trackEvent, savedEstimates }) => {
       
       {!userDetails?.isSubscribed && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-8">
-          <h3 className="font-semibold flex items-center text-yellow-800 mb-2">
+            <h3 className="font-semibold flex items-center text-yellow-800 mb-2">
             <span className="text-yellow-500 mr-2">⭐</span>
-            Unlock Premium Features
-          </h3>
-          <p className="text-yellow-800 mb-3">
+            Unlock Pro Features
+            </h3>
+            <p className="text-yellow-800 mb-3">
             Upgrade to access detailed project breakdowns, risk assessment, 
             competitor rate analysis, and more!
-          </p>
-          <button 
+            </p>
+            <button 
             onClick={goToSubscription}
             className="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded-lg font-medium text-sm transition-colors"
-          >
-            Upgrade Now for $9.99/month
-          </button>
+            >
+            Upgrade Now for $4.99/month
+            </button>
         </div>
-      )}
+        )}
       
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="border-b border-gray-200 px-6 py-4">

@@ -17,7 +17,7 @@ const Login = ({ setView, trackEvent }) => {
       console.log('User already logged in, redirecting to dashboard');
       handleSuccessfulLogin();
     }
-  }, [currentUser]);
+  }, [currentUser, handleSuccessfulLogin]); // Added handleSuccessfulLogin to the dependency array
   
   // Central function to handle successful login
   const handleSuccessfulLogin = () => {

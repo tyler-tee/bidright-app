@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 // No need for direct firebase import here as it will be imported via AuthContext
-import AnalyticsManager from './components/AnalyticsManager';
+// Analytics is now handled directly through service imports
 import Header from './components/Header';
 import Footer from './components/Footer';
 import FeedbackButton from './components/FeedbackButton';

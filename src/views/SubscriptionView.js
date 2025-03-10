@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getSubscriptionStatus, createCheckoutSession, cancelSubscription } from '../services/subscription';
 
 const SubscriptionView = ({ setView, trackEvent }) => {
-  const { currentUser, userDetails } = useAuth();
+  const { currentUser } = useAuth();
   const [isAnnual, setIsAnnual] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [currentPlan, setCurrentPlan] = useState('free');

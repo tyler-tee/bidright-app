@@ -1,5 +1,5 @@
 // src/components/auth/Login.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const Login = ({ setView, trackEvent }) => {
@@ -11,16 +11,8 @@ const Login = ({ setView, trackEvent }) => {
   
   const { login, signInWithGoogle, currentUser } = useAuth();
   
-  // Check if user is already logged in and redirect if needed
-  useEffect(() => {
-    if (currentUser) {
-      console.log('User already logged in, redirecting to dashboard');
-      handleSuccessfulLogin();
-    }
-  }, [currentUser, handleSuccessfulLogin]); // Added handleSuccessfulLogin to the dependency array
-  
-  // Central function to handle successful login
-  const handleSuccessfulLogin = () => {
+  // Define handleSuccessfulLogin with useCallback to prevent it from changing on every render
+  const handleSuccessfulLogin = useCallback(() => {
     setSuccess(true);
     setLoading(false);
     
@@ -34,7 +26,15 @@ const Login = ({ setView, trackEvent }) => {
         setView('dashboard');
       }
     }, 1000);
-  };
+  }, [setView]);
+  
+  // Check if user is already logged in and redirect if needed
+  useEffect(() => {
+    if (currentUser) {
+      console.log('User already logged in, redirecting to dashboard');
+      handleSuccessfulLogin();
+    }
+  }, [currentUser, handleSuccessfulLogin]);
   
   async function handleSubmit(e) {
     e.preventDefault();

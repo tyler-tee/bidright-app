@@ -19,6 +19,19 @@ export const createCheckoutSession = async (
   cancelUrl = window.location.origin
 ) => {
   try {
+    // Check if we're in development mode
+    const isDev = process.env.NODE_ENV === 'development';
+    
+    if (isDev) {
+      console.log('Creating checkout session in development mode');
+      console.log('User ID:', userId);
+      console.log('Plan ID:', planId);
+      console.log('Annual:', isAnnual);
+      
+      // Return a simulated checkout URL in development
+      return `${window.location.origin}/account?simulation=true&plan=${planId}&annual=${isAnnual}`;
+    }
+    
     // Create a reference to the checkout_sessions collection
     const checkoutSessionRef = collection(db, 'customers', userId, 'checkout_sessions');
     
@@ -63,6 +76,39 @@ export const createCheckoutSession = async (
  */
 export const getSubscriptionStatus = async (userId) => {
   try {
+    // Check if we're in development mode
+    const isDev = process.env.NODE_ENV === 'development';
+    
+    if (isDev) {
+      console.log('Getting subscription status in development mode');
+      
+      // Check if there's a simulated subscription in localStorage
+      const simulatedSubscription = localStorage.getItem(`simulated_subscription_${userId}`);
+      if (simulatedSubscription) {
+        return JSON.parse(simulatedSubscription);
+      }
+      
+      // Return default free plan status
+      return { active: false, plan: 'free' };
+    }
+    
+    // Get user document to check if there's a plan field
+    const userDoc = await getDoc(doc(db, 'users', userId));
+    
+    if (userDoc.exists() && userDoc.data().plan) {
+      const userData = userDoc.data();
+      
+      // If user document has plan information, use that
+      return {
+        active: userData.isSubscribed || userData.plan !== 'free',
+        plan: userData.plan || 'free',
+        renewalDate: userData.subscriptionEndDate ? new Date(userData.subscriptionEndDate) : null,
+        canceled: userData.subscriptionCanceled || false,
+        subscriptionId: userData.subscriptionId || null
+      };
+    }
+    
+    // If no subscription info in user document, check subscriptions subcollection
     const subscriptionsRef = collection(db, 'customers', userId, 'subscriptions');
     const subscriptionsSnapshot = await getDoc(subscriptionsRef);
     
@@ -80,9 +126,9 @@ export const getSubscriptionStatus = async (userId) => {
     
     return {
       active: latestSubscription.status === 'active',
-      plan: latestSubscription.price.product.metadata.plan || 'free',
-      renewalDate: latestSubscription.current_period_end.toDate(),
-      canceled: latestSubscription.cancel_at_period_end,
+      plan: latestSubscription.price?.product?.metadata?.plan || 'free',
+      renewalDate: latestSubscription.current_period_end?.toDate(),
+      canceled: latestSubscription.cancel_at_period_end || false,
       subscriptionId: sortedDocs[0].id
     };
   } catch (error) {
@@ -99,12 +145,47 @@ export const getSubscriptionStatus = async (userId) => {
  */
 export const cancelSubscription = async (userId, subscriptionId) => {
   try {
-    const cancelRef = doc(db, 'customers', userId, 'subscriptions', subscriptionId);
+    // Check if we're in development mode
+    const isDev = process.env.NODE_ENV === 'development';
     
-    // This assumes you have a Cloud Function that handles the actual cancellation
-    await updateDoc(cancelRef, {
-      cancel_at_period_end: true
-    });
+    if (isDev) {
+      console.log('Cancelling subscription in development mode');
+      
+      // Get the current simulated subscription
+      const simulatedSubscriptionStr = localStorage.getItem(`simulated_subscription_${userId}`);
+      if (simulatedSubscriptionStr) {
+        const simulatedSubscription = JSON.parse(simulatedSubscriptionStr);
+        
+        // Update the subscription to be canceled
+        simulatedSubscription.canceled = true;
+        
+        // Save back to localStorage
+        localStorage.setItem(`simulated_subscription_${userId}`, JSON.stringify(simulatedSubscription));
+      }
+      
+      return true;
+    }
+    
+    // Handle cancellation in production
+    // First check if the subscription exists in the user document
+    const userDoc = await getDoc(doc(db, 'users', userId));
+    
+    if (userDoc.exists() && userDoc.data().subscriptionId) {
+      // Update the user document
+      await updateDoc(doc(db, 'users', userId), {
+        subscriptionCanceled: true
+      });
+    }
+    
+    // Also update the subscription document if it exists
+    if (subscriptionId) {
+      const cancelRef = doc(db, 'customers', userId, 'subscriptions', subscriptionId);
+      
+      // This assumes you have a Cloud Function that handles the actual cancellation
+      await updateDoc(cancelRef, {
+        cancel_at_period_end: true
+      });
+    }
     
     return true;
   } catch (error) {
@@ -114,31 +195,58 @@ export const cancelSubscription = async (userId, subscriptionId) => {
 };
 
 /**
- * Update the subscription plan
+ * Simulate a subscription for development purposes
  * @param {string} userId - User ID
- * @param {string} subscriptionId - Subscription ID
- * @param {string} newPlanId - New plan ID
- * @param {boolean} isAnnual - Whether it's an annual plan
- * @returns {Promise<string>} Checkout URL for the plan change
+ * @param {string} planId - Plan ID ('pro' or 'premium')
+ * @param {boolean} isAnnual - Whether it's an annual subscription
+ * @returns {Promise<boolean>} Success status
  */
-export const updateSubscription = async (
-  userId, 
-  subscriptionId, 
-  newPlanId, 
-  isAnnual = false
-) => {
+export const simulateSubscription = async (userId, planId, isAnnual = false) => {
   try {
-    // For simplicity, we'll just create a new checkout session for now
-    // In a production app, you'd want to use Stripe's update subscription API
-    return await createCheckoutSession(
-      userId, 
-      newPlanId, 
-      isAnnual, 
-      `${window.location.origin}/account?upgrade=success`, 
-      `${window.location.origin}/account?upgrade=canceled`
-    );
+    // Only available in development mode
+    if (process.env.NODE_ENV !== 'development') {
+      console.warn('Simulation is only available in development mode');
+      return false;
+    }
+    
+    // Create a simulated subscription
+    const now = new Date();
+    const oneMonth = 30 * 24 * 60 * 60 * 1000;
+    const oneYear = 365 * 24 * 60 * 60 * 1000;
+    
+    const renewalDate = new Date(now.getTime() + (isAnnual ? oneYear : oneMonth));
+    
+    const simulatedSubscription = {
+      active: true,
+      plan: planId,
+      renewalDate,
+      canceled: false,
+      subscriptionId: `sim_${Date.now()}`,
+      isAnnual
+    };
+    
+    // Save to localStorage
+    localStorage.setItem(`simulated_subscription_${userId}`, JSON.stringify(simulatedSubscription));
+    
+    // Also update the user document if using Firebase
+    if (userId) {
+      try {
+        await updateDoc(doc(db, 'users', userId), {
+          plan: planId,
+          isSubscribed: true,
+          subscriptionEndDate: renewalDate.toISOString(),
+          subscriptionCanceled: false,
+          subscriptionId: simulatedSubscription.subscriptionId
+        });
+      } catch (error) {
+        console.error('Error updating user document:', error);
+        // Continue even if this fails
+      }
+    }
+    
+    return true;
   } catch (error) {
-    console.error("Error updating subscription:", error);
-    throw error;
+    console.error("Error simulating subscription:", error);
+    return false;
   }
 };

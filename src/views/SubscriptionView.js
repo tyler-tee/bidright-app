@@ -1,7 +1,9 @@
-// src/views/SubscriptionView.js
+// src/views/SubscriptionView.js - Updated for Stripe integration
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { getSubscriptionStatus, createCheckoutSession, cancelSubscription } from '../services/subscription';
+import { getSubscriptionStatus, cancelSubscription, resumeSubscription } from '../services/stripeService';
+import EnhancedPlanCard from '../components/pricing/EnhancedPlanCard';
+import StripeCallbackHandler from '../components/subscription/StripeCallbackHandler';
 
 const SubscriptionView = ({ setView, trackEvent }) => {
   const { currentUser } = useAuth();
@@ -10,6 +12,7 @@ const SubscriptionView = ({ setView, trackEvent }) => {
   const [currentPlan, setCurrentPlan] = useState('free');
   const [subscriptionDetails, setSubscriptionDetails] = useState(null);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [cancelConfirm, setCancelConfirm] = useState(false);
   
   useEffect(() => {
@@ -34,70 +37,64 @@ const SubscriptionView = ({ setView, trackEvent }) => {
     fetchSubscriptionStatus();
   }, [currentUser]);
   
-  const handleSelectPlan = async (plan, annual) => {
+  // Handle successful checkout
+  const handleCheckoutSuccess = (status) => {
+    setSuccess(`Your subscription to the ${status.plan} plan is now active!`);
+    setCurrentPlan(status.plan);
+    setSubscriptionDetails(status);
+    
+    // Scroll to top to show the success message
+    window.scrollTo(0, 0);
+  };
+  
+  // Handle checkout error
+  const handleCheckoutError = (error) => {
+    setError(`There was a problem with your subscription: ${error.message}`);
+    
+    // Scroll to top to show the error message
+    window.scrollTo(0, 0);
+  };
+  
+  // Handle plan selection
+  const handleSelectPlan = async (plan, annual, action) => {
     try {
       setIsLoading(true);
       setError('');
-      
-      if (plan === 'free' && currentPlan !== 'free') {
-        // Handle downgrade to free plan
-        setCancelConfirm(true);
-        setIsLoading(false);
-        return;
-      }
-      
-      if (!currentUser) {
-        // Redirect to signup
-        setView('signup');
-        localStorage.setItem('selectedPlan', JSON.stringify({ plan, annual }));
-        return;
-      }
+      setSuccess('');
       
       // Track plan selection
       trackEvent('select_plan', { 
         plan, 
-        billing_cycle: annual ? 'annual' : 'monthly'
+        billing_cycle: annual ? 'annual' : 'monthly',
+        action
       });
       
-      // Create checkout session
-      const checkoutUrl = await createCheckoutSession(
-        currentUser.uid,
-        plan,
-        annual,
-        `${window.location.origin}/account?subscription=success`,
-        `${window.location.origin}/subscription?subscription=cancelled`
-      );
-      
-      // Since we're in development without actual Stripe integration,
-      // simulate successful subscription update
-      if (process.env.NODE_ENV === 'development') {
-        // Simulate a successful upgrade
-        alert('Development mode: Simulating successful subscription update');
-        setCurrentPlan(plan);
-        setSubscriptionDetails({
-          active: true,
-          plan: plan,
-          renewalDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-          canceled: false,
-          subscriptionId: 'dev-subscription-id'
-        });
-        setIsLoading(false);
-        return;
+      if (action === 'resume' && subscriptionDetails?.subscriptionId) {
+        // Resume canceled subscription
+        await resumeSubscription(currentUser.uid, subscriptionDetails.subscriptionId);
+        
+        // Refresh subscription status
+        const updatedStatus = await getSubscriptionStatus(currentUser.uid);
+        setSubscriptionDetails(updatedStatus);
+        
+        setSuccess('Your subscription has been resumed successfully.');
+        setCancelConfirm(false);
       }
       
-      // Redirect to checkout in production
-      window.location.href = checkoutUrl;
+      setIsLoading(false);
     } catch (err) {
       setError('Failed to process your request. Please try again.');
-      console.error("Error selecting plan", err);
+      console.error("Error handling plan selection:", err);
       setIsLoading(false);
     }
   };
   
+  // Handle subscription cancellation
   const handleCancelSubscription = async () => {
     try {
       setIsLoading(true);
       setError('');
+      setSuccess('');
       
       if (!currentUser || !subscriptionDetails?.subscriptionId) {
         setError('No active subscription found');
@@ -105,41 +102,25 @@ const SubscriptionView = ({ setView, trackEvent }) => {
         return;
       }
       
-      // In development, simulate cancellation
-      if (process.env.NODE_ENV === 'development') {
-        // Simulate successful cancellation
-        setTimeout(() => {
-          setSubscriptionDetails({
-            ...subscriptionDetails,
-            canceled: true
-          });
-          setCancelConfirm(false);
-          trackEvent('subscription_cancelled');
-          setIsLoading(false);
-        }, 1000);
-        return;
-      }
+      // Cancel subscription at period end
+      await cancelSubscription(currentUser.uid, subscriptionDetails.subscriptionId);
       
-      // In production, call actual cancel endpoint
-      const success = await cancelSubscription(
-        currentUser.uid, 
-        subscriptionDetails.subscriptionId
-      );
+      // Refresh subscription status
+      const updatedStatus = await getSubscriptionStatus(currentUser.uid);
+      setSubscriptionDetails(updatedStatus);
       
-      if (success) {
-        // Update subscription details
-        const updatedStatus = await getSubscriptionStatus(currentUser.uid);
-        setSubscriptionDetails(updatedStatus);
-        trackEvent('subscription_cancelled');
-      } else {
-        setError('Failed to cancel subscription. Please try again or contact support.');
-      }
+      // Track cancellation
+      trackEvent('subscription_cancelled', {
+        plan: currentPlan,
+        reason: 'user_initiated'
+      });
       
+      setSuccess('Your subscription has been canceled. You will continue to have access until the end of your current billing period.');
       setCancelConfirm(false);
       setIsLoading(false);
     } catch (err) {
       setError('An error occurred while cancelling your subscription.');
-      console.error("Error cancelling subscription", err);
+      console.error("Error cancelling subscription:", err);
       setIsLoading(false);
     }
   };
@@ -160,8 +141,8 @@ const SubscriptionView = ({ setView, trackEvent }) => {
     {
       plan: 'pro',
       name: 'Pro',
-      price: 4.99,
-      annualPrice: 49.99,
+      price: 9.99,
+      annualPrice: 99,
       isPopular: true,
       features: [
         'All Free features',
@@ -169,8 +150,17 @@ const SubscriptionView = ({ setView, trackEvent }) => {
         'Detailed project breakdowns',
         'Risk assessment for project types',
         'PDF export with professional formatting',
-        'White-label estimates',
-        'Competitor rate analysis',
+        'White-label estimates'
+      ]
+    },
+    {
+      plan: 'premium',
+      name: 'Premium',
+      price: 19.99,
+      annualPrice: 199,
+      features: [
+        'All Pro features',
+        'Project profitability analysis',
         'Client management system',
         'Contract templates',
         'Priority email support'
@@ -180,6 +170,13 @@ const SubscriptionView = ({ setView, trackEvent }) => {
   
   return (
     <div className="max-w-6xl mx-auto py-12 px-4">
+      {/* Stripe Callback Handler */}
+      <StripeCallbackHandler 
+        onSuccess={handleCheckoutSuccess} 
+        onError={handleCheckoutError} 
+        trackEvent={trackEvent} 
+      />
+      
       <div className="flex justify-between items-center mb-12">
         <h2 className="text-3xl font-bold">Subscription</h2>
         <button
@@ -190,6 +187,20 @@ const SubscriptionView = ({ setView, trackEvent }) => {
         </button>
       </div>
       
+      {/* Success and Error Messages */}
+      {success && (
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-8">
+          {success}
+        </div>
+      )}
+      
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded mb-8">
+          {error}
+        </div>
+      )}
+      
+      {/* Current Subscription Banner */}
       {subscriptionDetails && subscriptionDetails.active && (
         <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-12">
           <div className="bg-blue-600 p-6 text-white">
@@ -200,7 +211,7 @@ const SubscriptionView = ({ setView, trackEvent }) => {
             <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
               <div>
                 <h4 className="text-lg font-semibold">
-                  {currentPlan === 'pro' ? 'Pro Plan' : 'Free Plan'}
+                  {currentPlan === 'premium' ? 'Premium Plan' : currentPlan === 'pro' ? 'Pro Plan' : 'Free Plan'}
                 </h4>
                 
                 {subscriptionDetails.renewalDate && (
@@ -220,13 +231,31 @@ const SubscriptionView = ({ setView, trackEvent }) => {
               </div>
               
               <div className="flex gap-3">
-                {!subscriptionDetails.canceled && (
+                {!subscriptionDetails.canceled ? (
                   <button
                     onClick={() => setCancelConfirm(true)}
                     disabled={isLoading}
                     className="text-red-600 hover:text-red-800 font-medium"
                   >
                     Cancel Subscription
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleSelectPlan(currentPlan, isAnnual, 'resume')}
+                    disabled={isLoading}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                  >
+                    Resume Subscription
+                  </button>
+                )}
+                
+                {currentPlan !== 'premium' && (
+                  <button
+                    onClick={() => handleSelectPlan('premium', isAnnual, 'upgrade')}
+                    disabled={isLoading}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                  >
+                    Upgrade to Premium
                   </button>
                 )}
               </div>
@@ -235,12 +264,7 @@ const SubscriptionView = ({ setView, trackEvent }) => {
         </div>
       )}
       
-      {error && (
-        <div className="max-w-md mx-auto mb-8 bg-red-50 border border-red-200 text-red-600 p-4 rounded-lg">
-          {error}
-        </div>
-      )}
-      
+      {/* Cancellation Confirmation Modal */}
       {cancelConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
@@ -269,6 +293,7 @@ const SubscriptionView = ({ setView, trackEvent }) => {
         </div>
       )}
       
+      {/* Plan Selection */}
       <div className="text-center mb-12">
         <h3 className="text-xl font-bold mb-4">Choose the Right Plan for Your Business</h3>
         
@@ -289,82 +314,26 @@ const SubscriptionView = ({ setView, trackEvent }) => {
           >
             Annual
             <span className="ml-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-              Save 16%
+              Save 20%
             </span>
           </button>
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-12">
+      {/* Plan Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
         {plans.map((plan) => (
-          <div 
+          <EnhancedPlanCard
             key={plan.plan}
-            className={`bg-white rounded-lg shadow-md overflow-hidden border-2 ${
-              plan.isPopular ? 'border-blue-500' : 'border-gray-200'
-            }`}
-          >
-            {plan.isPopular && (
-              <div className="bg-blue-500 text-white py-1 px-6 text-sm font-bold text-center">
-                MOST POPULAR
-              </div>
-            )}
-            
-            <div className="p-6">
-              <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
-              
-              <div className="mb-6">
-                <div className="flex items-baseline">
-                  <span className="text-3xl font-bold">
-                    ${isAnnual && plan.price > 0 ? (plan.annualPrice / 12).toFixed(2) : plan.price}
-                  </span>
-                  {plan.price > 0 && <span className="text-gray-500 ml-1">/month</span>}
-                </div>
-                
-                {isAnnual && plan.price > 0 && (
-                  <p className="text-green-600 text-sm mt-1">
-                    Save ${(plan.price * 12 - plan.annualPrice).toFixed(2)} annually
-                  </p>
-                )}
-              </div>
-              
-              <ul className="space-y-3 mb-8">
-                {plan.features.map((feature, index) => (
-                  <li key={index} className="flex items-start">
-                    <svg className="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-              
-              <button
-                onClick={() => handleSelectPlan(plan.plan, isAnnual)}
-                disabled={isLoading || (currentPlan === plan.plan && !subscriptionDetails?.canceled)}
-                className={`
-                  w-full py-2 px-4 rounded-lg font-semibold
-                  ${
-                    currentPlan === plan.plan && !subscriptionDetails?.canceled
-                      ? 'bg-green-100 text-green-800 cursor-default'
-                      : plan.isPopular
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                        : 'bg-gray-800 hover:bg-gray-900 text-white'
-                  }
-                  transition-colors
-                  ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}
-                `}
-              >
-                {isLoading 
-                  ? 'Processing...' 
-                  : currentPlan === plan.plan && !subscriptionDetails?.canceled
-                    ? 'Current Plan' 
-                    : plan.plan === 'free' ? 'Downgrade to Free' : `Select ${plan.name}`}
-              </button>
-            </div>
-          </div>
+            {...plan}
+            isAnnual={isAnnual}
+            trackEvent={trackEvent}
+            onSelectPlan={handleSelectPlan}
+          />
         ))}
       </div>
       
+      {/* FAQ Section */}
       <div className="bg-gray-50 rounded-lg p-6 max-w-3xl mx-auto">
         <h3 className="text-lg font-semibold mb-4">Frequently Asked Questions</h3>
         

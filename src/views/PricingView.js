@@ -1,4 +1,4 @@
-// src/views/PricingView.js - Updated with Project Profitability Analysis feature
+// src/views/PricingView.js - Corrected with two-tier pricing
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getSubscriptionStatus } from '../services/stripeService';
@@ -69,36 +69,25 @@ const PricingView = ({ setView, trackEvent }) => {
       features: [
         'Basic project estimation',
         'Up to 3 saved estimates',
-        'Industry-standard rate ranges',
-        'One-time export functionality'
+        'Text-only export',
+        'Standard support'
       ]
     },
     {
       plan: 'pro',
       name: 'Pro',
-      price: 9.99,
-      annualPrice: 99,
+      price: 4.99,
+      annualPrice: 49.99,
       isPopular: true,
       features: [
-        'All Free features',
         'Unlimited saved estimates',
+        'PDF export with branding',
         'Detailed project breakdowns',
-        'Risk assessment for project types',
-        'PDF export with professional formatting',
-        'White-label estimates'
-      ]
-    },
-    {
-      plan: 'premium',
-      name: 'Premium',
-      price: 19.99,
-      annualPrice: 199,
-      features: [
-        'All Pro features',
-        'Project profitability analysis',
-        'Client management system',
+        'Risk assessment',
+        'Profitability analysis',
+        'White-label exports',
         'Contract templates',
-        'Priority email support'
+        'Priority support'
       ]
     }
   ];
@@ -128,7 +117,7 @@ const PricingView = ({ setView, trackEvent }) => {
           >
             Annual
             <span className="ml-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-              Save 20%
+              Save 16%
             </span>
           </button>
         </div>
@@ -140,7 +129,7 @@ const PricingView = ({ setView, trackEvent }) => {
         </div>
       )}
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
         {plans.map((plan) => (
           <EnhancedPlanCard
             key={plan.plan}
@@ -162,7 +151,6 @@ const PricingView = ({ setView, trackEvent }) => {
                 <th className="px-4 py-3 text-left border-b border-gray-200">Feature</th>
                 <th className="px-4 py-3 text-center border-b border-gray-200">Free</th>
                 <th className="px-4 py-3 text-center border-b border-gray-200">Pro</th>
-                <th className="px-4 py-3 text-center border-b border-gray-200">Premium</th>
               </tr>
             </thead>
             <tbody>
@@ -170,53 +158,49 @@ const PricingView = ({ setView, trackEvent }) => {
                 <td className="px-4 py-3 border-b border-gray-200 font-medium">Project Estimation</td>
                 <td className="px-4 py-3 text-center border-b border-gray-200">✓</td>
                 <td className="px-4 py-3 text-center border-b border-gray-200">✓</td>
-                <td className="px-4 py-3 text-center border-b border-gray-200">✓</td>
               </tr>
               <tr>
                 <td className="px-4 py-3 border-b border-gray-200 font-medium">Saved Estimates</td>
                 <td className="px-4 py-3 text-center border-b border-gray-200">Up to 3</td>
-                <td className="px-4 py-3 text-center border-b border-gray-200">Unlimited</td>
                 <td className="px-4 py-3 text-center border-b border-gray-200">Unlimited</td>
               </tr>
               <tr>
                 <td className="px-4 py-3 border-b border-gray-200 font-medium">Export Options</td>
                 <td className="px-4 py-3 text-center border-b border-gray-200">Text Only</td>
                 <td className="px-4 py-3 text-center border-b border-gray-200">PDF + Branding</td>
-                <td className="px-4 py-3 text-center border-b border-gray-200">PDF + White Label</td>
               </tr>
               <tr>
                 <td className="px-4 py-3 border-b border-gray-200 font-medium">Project Breakdown</td>
                 <td className="px-4 py-3 text-center border-b border-gray-200">-</td>
-                <td className="px-4 py-3 text-center border-b border-gray-200">✓</td>
                 <td className="px-4 py-3 text-center border-b border-gray-200">✓</td>
               </tr>
               <tr>
                 <td className="px-4 py-3 border-b border-gray-200 font-medium">Risk Assessment</td>
                 <td className="px-4 py-3 text-center border-b border-gray-200">-</td>
                 <td className="px-4 py-3 text-center border-b border-gray-200">✓</td>
-                <td className="px-4 py-3 text-center border-b border-gray-200">✓</td>
               </tr>
               <tr>
                 <td className="px-4 py-3 border-b border-gray-200 font-medium">Profitability Analysis</td>
                 <td className="px-4 py-3 text-center border-b border-gray-200">-</td>
+                <td className="px-4 py-3 text-center border-b border-gray-200">✓</td>
+              </tr>
+              <tr>
+                <td className="px-4 py-3 border-b border-gray-200 font-medium">White Label Exports</td>
                 <td className="px-4 py-3 text-center border-b border-gray-200">-</td>
                 <td className="px-4 py-3 text-center border-b border-gray-200">✓</td>
               </tr>
               <tr>
                 <td className="px-4 py-3 border-b border-gray-200 font-medium">Client Management</td>
                 <td className="px-4 py-3 text-center border-b border-gray-200">-</td>
-                <td className="px-4 py-3 text-center border-b border-gray-200">-</td>
                 <td className="px-4 py-3 text-center border-b border-gray-200">✓</td>
               </tr>
               <tr>
                 <td className="px-4 py-3 border-b border-gray-200 font-medium">Contract Templates</td>
                 <td className="px-4 py-3 text-center border-b border-gray-200">-</td>
-                <td className="px-4 py-3 text-center border-b border-gray-200">-</td>
                 <td className="px-4 py-3 text-center border-b border-gray-200">✓</td>
               </tr>
               <tr>
                 <td className="px-4 py-3 border-b border-gray-200 font-medium">Support</td>
-                <td className="px-4 py-3 text-center border-b border-gray-200">Standard</td>
                 <td className="px-4 py-3 text-center border-b border-gray-200">Standard</td>
                 <td className="px-4 py-3 text-center border-b border-gray-200">Priority</td>
               </tr>

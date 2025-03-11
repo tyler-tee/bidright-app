@@ -1,6 +1,5 @@
 // src/components/pricing/EnhancedPlanCard.js
 import React, { useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
 import { usePremiumFeatures } from '../../contexts/PremiumFeaturesContext';
 import StripeCheckoutButton from '../subscription/StripeCheckoutButton';
 
@@ -18,7 +17,6 @@ const EnhancedPlanCard = ({
   trackEvent,
   onSelectPlan
 }) => {
-  const { currentUser } = useAuth();
   const { getCurrentPlan, hasCanceledPlan } = usePremiumFeatures();
   const [error, setError] = useState(null);
   

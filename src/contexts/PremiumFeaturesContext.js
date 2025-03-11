@@ -20,16 +20,6 @@ const FEATURE_ACCESS = {
     'project_breakdown',       // Detailed project breakdown
     'risk_assessment',         // Project risk assessment
     'custom_branding',         // Add your own branding to exports
-  ],
-  
-  // Premium plan features
-  premium: [
-    'basic_estimation',
-    'save_estimates_unlimited',
-    'export_pdf',
-    'project_breakdown',
-    'risk_assessment',
-    'custom_branding',
     'white_label',             // Remove BidRight branding
     'profitability_analysis',  // Project profitability calculator
     'client_management',       // Manage clients
@@ -46,7 +36,7 @@ export const usePremiumFeatures = () => useContext(PremiumFeaturesContext);
 
 // Provider component
 export function PremiumFeaturesProvider({ children }) {
-  const { currentUser, userDetails } = useAuth();
+  const { currentUser } = useAuth();
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -98,8 +88,8 @@ export function PremiumFeaturesProvider({ children }) {
     
     if (!isActive) return planName === 'free';
     
-    // Plan hierarchy: free < pro < premium
-    const planHierarchy = { free: 1, pro: 2, premium: 3 };
+    // Plan hierarchy: free < pro
+    const planHierarchy = { free: 1, pro: 2 };
     
     // User has access to the plan if their current plan is the same or higher level
     return planHierarchy[currentPlan] >= planHierarchy[planName];
@@ -118,7 +108,7 @@ export function PremiumFeaturesProvider({ children }) {
   
   // Check if user can save more estimates
   const canSaveMoreEstimates = (currentEstimateCount) => {
-    // Pro and premium users have unlimited estimates
+    // Pro users have unlimited estimates
     if (hasPlan('pro')) return true;
     
     // Free users are limited to 3 estimates
@@ -177,7 +167,7 @@ export function PremiumFeaturesProvider({ children }) {
     }
     
     const plan = subscriptionStatus.active ? subscriptionStatus.plan : 'free';
-    const planDisplay = plan === 'premium' ? 'Premium Plan' : plan === 'pro' ? 'Pro Plan' : 'Free Plan';
+    const planDisplay = plan === 'pro' ? 'Pro Plan' : 'Free Plan';
     
     let renewalText = '';
     if (subscriptionStatus.renewalDate) {

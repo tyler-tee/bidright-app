@@ -14,7 +14,7 @@ const ProjectBreakdown = ({
   estimate, 
   isUserPremium = false 
 }) => {
-  const [tasks, setTasks] = useState(generateTaskBreakdown(industry, projectType, complexity, features, estimate));
+  const [tasks] = useState(generateTaskBreakdown(industry, projectType, complexity, features, estimate));
   
   // If user is not premium, show upgrade prompt
   if (!isUserPremium) {

@@ -1,19 +1,22 @@
-// src/components/premium/RiskAssessment.js
+// src/components/premium/RiskAssessment.js - Fixed with default case
 import React from 'react';
+import { usePremiumFeatures } from '../../contexts/PremiumFeaturesContext';
 
 /**
- * Risk assessment component for Premium users
+ * Risk assessment component for Pro users
  * Shows potential project risks and mitigation strategies
  */
 const RiskAssessment = ({ 
   industry, 
   projectType, 
   complexity, 
-  features,
-  isUserPremium = false 
+  features 
 }) => {
-  // If user is not premium, show upgrade prompt
-  if (!isUserPremium) {
+  const { hasFeature } = usePremiumFeatures();
+  const isPremiumFeature = hasFeature('risk_assessment');
+  
+  // If user doesn't have premium feature access, show upgrade prompt
+  if (!isPremiumFeature) {
     return (
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
         <h3 className="text-lg font-semibold mb-2">Project Risk Assessment</h3>
@@ -138,6 +141,15 @@ function generateRisks(industry, projectType, complexity, features) {
       break;
       
     // Add more industry-specific risks as needed
+    default:
+      // Default case for any other industry
+      risks.push({
+        name: 'General Project Risk',
+        level: 'Medium',
+        description: 'All projects carry inherent risks related to timeline, scope, and quality expectations.',
+        mitigation: 'Clear communication, detailed contracts, and regular progress updates help mitigate general project risks.'
+      });
+      break;
   }
   
   // Add general risks based on complexity

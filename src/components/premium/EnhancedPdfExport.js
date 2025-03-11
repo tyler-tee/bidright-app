@@ -1,7 +1,6 @@
 // src/components/premium/EnhancedPdfExport.js
 import React, { useState } from 'react';
 import { generateEstimatePDF } from '../../services/enhancedPdfExport';
-import { formatCurrency } from '../../utils/formatters';
 
 /**
  * Enhanced PDF Export component for Pro users

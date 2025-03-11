@@ -8,17 +8,14 @@ import { usePremiumFeatures } from '../../contexts/PremiumFeaturesContext';
  * Helps users calculate true project profitability and optimize pricing
  */
 const ProjectProfitabilityAnalysis = ({ 
-  estimate,
-  industry,
-  projectType,
-  metadata
+  estimate
 }) => {
   const { hasFeature } = usePremiumFeatures();
   const isPremiumFeature = hasFeature('profitability_analysis');
   
   const [overhead, setOverhead] = useState(30); // Default 30% overhead
   const [targetProfit, setTargetProfit] = useState(20); // Default 20% profit margin
-  const [hourlyRate, setHourlyRate] = useState(estimate ? Math.round(estimate.cost / estimate.hours) : 50);
+  const [hourlyRate] = useState(estimate ? Math.round(estimate.cost / estimate.hours) : 50);
   const [nonBillableHours, setNonBillableHours] = useState(25); // % of time spent on non-billable work
   
   // If user doesn't have premium feature access, show upgrade prompt

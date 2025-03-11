@@ -1,6 +1,7 @@
-// src/App.js
+// src/App.js - Updated to include PremiumFeaturesProvider
 import React, { useState, useEffect, useRef } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { PremiumFeaturesProvider } from './contexts/PremiumFeaturesContext';
 // No need for direct firebase import here as it will be imported via AuthContext
 // Analytics is now handled directly through service imports
 import Header from './components/Header';
@@ -13,7 +14,6 @@ import WelcomeGuide from './components/WelcomeGuide';
 // Services
 import { initializeAnalytics, trackEvent, trackPageView, identifyUser } from './services/analytics';
 import { loadEstimates } from './utils/storage';
-import { hasPremiumAccess, hasFeatureAccess, getRemainingFreeEstimates } from './utils/premiumAccess';
 
 // Views
 import HomeView from './views/HomeView';
@@ -124,11 +124,10 @@ function AppContent() {
       identifyUser(currentUser.uid, {
         user_id: currentUser.uid,
         email: currentUser.email,
-        display_name: currentUser.displayName,
-        premium_user: hasPremiumAccess(userDetails)
+        display_name: currentUser.displayName
       });
     }
-  }, [currentUser, userDetails]);
+  }, [currentUser]);
 
   // Track page view when view changes
   useEffect(() => {
@@ -186,22 +185,12 @@ function AppContent() {
     }, 1000);
   };
   
-  // Check if user can save more estimates (for free tier)
-  const canSaveMoreEstimates = () => {
-    if (hasPremiumAccess(userDetails)) {
-      return true; // Premium users can save unlimited estimates
-    }
-    
-    return getRemainingFreeEstimates(userDetails, savedEstimates.length) > 0;
-  };
-  
   // Enhanced trackEvent function to include user context
   const trackUserEvent = (eventName, eventParams = {}) => {
     // Add user context to event
     const enhancedParams = {
       ...eventParams,
       is_logged_in: !!currentUser,
-      has_premium: hasPremiumAccess(userDetails),
       view: view
     };
     
@@ -218,7 +207,6 @@ function AppContent() {
         setMobileMenuOpen={setMobileMenuOpen} 
         savedEstimates={savedEstimates} 
         trackEvent={trackUserEvent}
-        isPremium={hasPremiumAccess(userDetails)}
       />;
     }
     
@@ -305,7 +293,6 @@ function AppContent() {
           setError={setError}
           trackEvent={trackUserEvent}
           userDetails={userDetails}
-          canSaveMoreEstimates={canSaveMoreEstimates()}
         />
       );
     }
@@ -318,7 +305,7 @@ function AppContent() {
           projectType={projectType}
           complexity={complexity}
           features={features}
-          showPremiumPrompt={showPremiumPrompt && !hasPremiumAccess(userDetails)}
+          showPremiumPrompt={showPremiumPrompt}
           setView={setView}
           email={email}
           setEmail={setEmail}
@@ -335,12 +322,6 @@ function AppContent() {
           trackEvent={trackUserEvent}
           handleAccountAction={handleAccountAction}
           setMobileMenuOpen={setMobileMenuOpen}
-          isLoggedIn={!!currentUser}
-          isPremium={hasPremiumAccess(userDetails)}
-          canSaveMoreEstimates={canSaveMoreEstimates()}
-          hasRiskAssessment={hasFeatureAccess(userDetails, 'risk_assessment')}
-          hasProjectBreakdown={hasFeatureAccess(userDetails, 'project_breakdown')}
-          hasCompetitorRates={hasFeatureAccess(userDetails, 'competitor_rates')}
         />
       );
     }
@@ -351,7 +332,6 @@ function AppContent() {
       setMobileMenuOpen={setMobileMenuOpen} 
       savedEstimates={savedEstimates} 
       trackEvent={trackUserEvent}
-      isPremium={hasPremiumAccess(userDetails)}
     />;
   };
   
@@ -367,7 +347,6 @@ function AppContent() {
         trackEvent={trackUserEvent}
         isLoggedIn={!!currentUser}
         userName={currentUser?.displayName}
-        isPremium={hasPremiumAccess(userDetails)}
       />
       
       <main className="py-8" role="main">
@@ -401,7 +380,9 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <PremiumFeaturesProvider>
+        <AppContent />
+      </PremiumFeaturesProvider>
     </AuthProvider>
   );
 }

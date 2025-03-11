@@ -1,4 +1,4 @@
-// src/views/PricingView.js - Corrected with two-tier pricing
+// src/views/PricingView.js
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getSubscriptionStatus } from '../services/stripeService';

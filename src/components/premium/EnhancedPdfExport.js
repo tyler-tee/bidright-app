@@ -4,13 +4,12 @@ import { generateEstimatePDF } from '../../services/enhancedPdfExport';
 
 /**
  * Enhanced PDF Export component for Pro users
- * Allows generating professional PDF estimates with more customization options
+ * Allows generating professional PDF estimates with customization options
  */
 const EnhancedPdfExport = ({ 
   estimate, 
   metadata, 
   isUserPro = false,
-  isPremium = false,
   onExport
 }) => {
   const [includeBreakdown, setIncludeBreakdown] = useState(true);
@@ -77,7 +76,7 @@ const EnhancedPdfExport = ({
         clientEmail,
         includeTerms,
         terms,
-        whiteLabel: isPremium && whiteLabel // Only allow white-labeling for Premium users
+        whiteLabel // White label is now included in Pro tier
       };
       
       // Generate PDF
@@ -284,21 +283,19 @@ const EnhancedPdfExport = ({
               </div>
             )}
             
-            {/* White Label Option - Premium Feature */}
-            {isPremium && (
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="whiteLabel"
-                  checked={whiteLabel}
-                  onChange={(e) => setWhiteLabel(e.target.checked)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label htmlFor="whiteLabel" className="ml-2 block text-sm text-gray-700">
-                  Remove BidRight branding (Premium feature)
-                </label>
-              </div>
-            )}
+            {/* White Label Option - Now part of Pro tier */}
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="whiteLabel"
+                checked={whiteLabel}
+                onChange={(e) => setWhiteLabel(e.target.checked)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="whiteLabel" className="ml-2 block text-sm text-gray-700">
+                Remove BidRight branding (Pro feature)
+              </label>
+            </div>
           </div>
         </div>
         

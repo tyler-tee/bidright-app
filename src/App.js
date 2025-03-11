@@ -142,14 +142,14 @@ function AppContent() {
     } else if (action === 'Sign Up') {
       setView('signup');
       trackEvent('click_signup');
-    } else if (action === 'Premium upgrade') {
+    } else if (action === 'Pro upgrade') { // Changed from "Premium upgrade"
       if (currentUser) {
         setView('subscription');
-        trackEvent('click_premium_upgrade');
+        trackEvent('click_pro_upgrade');
       } else {
         localStorage.setItem('redirectAfterLogin', 'subscription');
         setView('login');
-        trackEvent('click_premium_upgrade_redirect_login');
+        trackEvent('click_pro_upgrade_redirect_login');
       }
     } else {
       setModalContent({

@@ -10,9 +10,7 @@ import { db } from '../firebase';
 // Price IDs - these should match your Stripe products
 const PRICE_IDS = {
   pro_monthly: process.env.REACT_APP_STRIPE_PRICE_PRO_MONTHLY || 'price_pro_monthly',
-  pro_annual: process.env.REACT_APP_STRIPE_PRICE_PRO_ANNUAL || 'price_pro_annual',
-  premium_monthly: process.env.REACT_APP_STRIPE_PRICE_PREMIUM_MONTHLY || 'price_premium_monthly',
-  premium_annual: process.env.REACT_APP_STRIPE_PRICE_PREMIUM_ANNUAL || 'price_premium_annual'
+  pro_annual: process.env.REACT_APP_STRIPE_PRICE_PRO_ANNUAL || 'price_pro_annual'
 };
 
 /**

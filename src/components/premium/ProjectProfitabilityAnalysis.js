@@ -4,22 +4,22 @@ import { formatCurrency } from '../../utils/formatters';
 import { usePremiumFeatures } from '../../contexts/PremiumFeaturesContext';
 
 /**
- * Project Profitability Analysis component for Premium users
+ * Project Profitability Analysis component for Pro users
  * Helps users calculate true project profitability and optimize pricing
  */
 const ProjectProfitabilityAnalysis = ({ 
   estimate
 }) => {
   const { hasFeature } = usePremiumFeatures();
-  const isPremiumFeature = hasFeature('profitability_analysis');
+  const isProfitabilityFeature = hasFeature('profitability_analysis');
   
   const [overhead, setOverhead] = useState(30); // Default 30% overhead
   const [targetProfit, setTargetProfit] = useState(20); // Default 20% profit margin
   const [hourlyRate] = useState(estimate ? Math.round(estimate.cost / estimate.hours) : 50);
   const [nonBillableHours, setNonBillableHours] = useState(25); // % of time spent on non-billable work
   
-  // If user doesn't have premium feature access, show upgrade prompt
-  if (!isPremiumFeature) {
+  // If user doesn't have profitability analysis feature (Pro feature), show upgrade prompt
+  if (!isProfitabilityFeature) {
     return (
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
         <h3 className="text-lg font-semibold mb-2">Profitability Analysis</h3>
@@ -28,7 +28,7 @@ const ProjectProfitabilityAnalysis = ({
           Optimize your pricing for sustainable business growth.
         </p>
         <button className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors">
-          Upgrade to Premium
+          Upgrade to Pro
         </button>
       </div>
     );

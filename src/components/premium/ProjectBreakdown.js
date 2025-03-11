@@ -12,12 +12,12 @@ const ProjectBreakdown = ({
   complexity, 
   features, 
   estimate, 
-  isUserPremium = false 
+  isUserPro = false 
 }) => {
   const [tasks] = useState(generateTaskBreakdown(industry, projectType, complexity, features, estimate));
   
   // If user is not premium, show upgrade prompt
-  if (!isUserPremium) {
+  if (!isUserPro) {
     return (
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
         <h3 className="text-lg font-semibold mb-2">Detailed Project Breakdown</h3>

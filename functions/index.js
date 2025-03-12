@@ -24,7 +24,11 @@ const getStripe = () => {
 
 // Webhook handler for Stripe events
 exports.stripeWebhook = onRequest({
-  cors: true,
+    cors: [
+        "https://bidright.app", 
+        "https://www.bidright.app",
+        "http://localhost:3000"
+        ],
   maxInstances: 10
 }, async (req, res) => {
   const stripe = getStripe();
@@ -77,6 +81,11 @@ exports.stripeWebhook = onRequest({
 
 // Customer portal session creation function
 exports.createCustomerPortalSession = onCall({
+    cors: [
+        "https://bidright.app", 
+        "https://www.bidright.app",
+        "http://localhost:3000"
+        ],
   maxInstances: 10
 }, async (request) => {
   const stripe = getStripe();

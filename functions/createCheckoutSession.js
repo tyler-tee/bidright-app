@@ -34,6 +34,11 @@ const getStripe = () => {
 
 // Create a checkout session for subscription
 exports.createCheckoutSession = onCall({
+    cors: [
+        "https://bidright.app", 
+        "https://www.bidright.app",
+        "http://localhost:3000"
+        ],
   maxInstances: 10
 }, async (request) => {
   const stripe = getStripe();
